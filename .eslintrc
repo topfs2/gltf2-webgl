@@ -1,0 +1,56 @@
+{
+  "rules": {
+    "indent": [
+      2,
+      4
+    ],
+    "quotes": [
+      1,
+      "single"
+    ],
+    "eol-last": [
+      2
+    ],
+    "linebreak-style": [
+      2,
+      "unix"
+    ],
+    "no-trailing-spaces": [
+      2, {
+        "skipBlankLines": true
+      }
+    ],
+    "no-var": [
+      1
+    ],
+    "semi": [
+      2,
+      "always"
+    ],
+    "no-unused-vars": [
+      1
+    ],
+    "block-scoped-var": [
+      2
+    ],
+    "curly": [
+      2
+    ],
+    "brace-style": [
+      2
+    ],
+    "space-before-function-paren": [
+      2
+    ]
+  },
+  "env": {
+    "es6": true
+  },
+  "parserOptions": {
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true
+    }
+  },
+  "root": true
+}
