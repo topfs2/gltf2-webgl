@@ -43,7 +43,7 @@ const Shader = function (gl, vs, fs, attributeLocations) {
             console.log('bind attribute', name, index);
         }
 
-        gl.bindAttribLocation(program, index, name)
+        gl.bindAttribLocation(program, index, name);
     });
 
     gl.linkProgram(program);
@@ -81,14 +81,14 @@ const BindUniformMethods = (matrix, methods) => {
 
             if (loc) {
                 if (matrix) {
-                    gl[method](loc, false, u)
+                    gl[method](loc, false, u);
                 } else {
-                    gl[method](loc, u)
+                    gl[method](loc, u);
                 }
             } else if (DEBUG_UNIFORMS) {
                 console.log('No location for uniform', name, u);
             }
-        }
+        };
     });
 };
 

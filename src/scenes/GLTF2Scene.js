@@ -40,7 +40,7 @@ const logOnce = (...args) => {
     if (first) {
         console.log(...args);
     }
-}
+};
 
 const typeArray = (componentType) => {
     if (componentType == gl.FLOAT) {
@@ -79,12 +79,12 @@ const create = () => {
     let haveLodSupport = false;
     let haveFloatSupport = false;
 
-    function loadQuad(gl) {
+    function loadQuad (gl) {
         const vertices = new Float32Array([
         //   x   y  z  u  v
             -1, -1, 0, 0, 0,
-             1, -1, 0, 1, 0,
-             1,  1, 0, 1, 1,
+            1, -1, 0, 1, 0,
+            1,  1, 0, 1, 1,
             -1,  1, 0, 0, 1
         ]);
 
@@ -116,7 +116,7 @@ const create = () => {
         };
     };
 
-    function prepareData(data, offset, length, Type) {
+    function prepareData (data, offset, length, Type) {
         data = data.slice(offset, offset + length);
 
         if (Type) {
@@ -126,11 +126,11 @@ const create = () => {
         return data;
     }
 
-    function getBufferData(bufferN) {
+    function getBufferData (bufferN) {
         return buffers[bufferN];
     }
 
-    function getBufferViewData(bufferView) {
+    function getBufferViewData (bufferView) {
         const data = getBufferData(bufferView.buffer);
         const byteOffset = _.get(bufferView, 'byteOffset', 0);
         const byteLength = _.get(bufferView, 'byteLength');
@@ -138,7 +138,7 @@ const create = () => {
         return data.slice(byteOffset, byteOffset + byteLength);
     }
 
-    function loadBufferView(gl, bufferView, target) {
+    function loadBufferView (gl, bufferView, target) {
         const data = getBufferViewData(bufferView);
         if (bufferView.target) {
             target = bufferView.target;
@@ -151,12 +151,12 @@ const create = () => {
         return { target, buffer };
     }
 
-    function bindBufferView(gl, bufferViews, bufferViewN) {
+    function bindBufferView (gl, bufferViews, bufferViewN) {
         const { target, buffer } = bufferViews[bufferViewN];
         gl.bindBuffer(target, buffer);
     }
 
-    function loadCamera(camera) {
+    function loadCamera (camera) {
         if (camera.type == 'perspective') {
             const perspective = camera.perspective;
 
@@ -185,18 +185,18 @@ const create = () => {
         }
     }
 
-    function bindTexture(gl, shader, name, materialRef, unit) {
+    function bindTexture (gl, shader, name, materialRef, unit) {
         bindTextureAs(gl, shader, name + 'Texture', materialRef, name + 'Sampler', unit);
     }
 
-    function bindTextureAs(gl, shader, name, materialRef, uniform, unit) {
+    function bindTextureAs (gl, shader, name, materialRef, uniform, unit) {
         const index = _.get(materialRef, [ name, 'index' ]);
 
         const textureSpec = gltf.textures[index];
         const sampler = textureSpec.sampler ? gltf.samplers[textureSpec.sampler] : { };
         const texture = textures[textureSpec.source];
 
-        logOnce('sampler', sampler, unit)
+        logOnce('sampler', sampler, unit);
 
         gl.activeTexture(gl.TEXTURE0 + unit);
         gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -209,7 +209,7 @@ const create = () => {
         shader.uniform1i(uniform, unit);
     }
 
-    function setupShaderForMaterialTextured(gl, material, definesMap) {
+    function setupShaderForMaterialTextured (gl, material, definesMap) {
         const pbrMetallicRoughness = material.pbrMetallicRoughness;
 
         // TODO DamagedHelmet seems to have sRGB albedo and emissive textures.
@@ -282,7 +282,7 @@ const create = () => {
     const setupShaderForMaterial = setupShaderForMaterialTextured;
 
     // TODO With webgl2 we can use VertexArrayObject and move load part from draw to load
-    function createMesh(gl, mesh) {
+    function createMesh (gl, mesh) {
         const debugAccessor = (name, accessor) => {
             //console.log('asked', name);
 
@@ -298,7 +298,7 @@ const create = () => {
 
                 const bvData = getBufferViewData(bufferView);
                 const Type = typeArray(componentType);
-                const aData = prepareData(bvData, byteOffset, count * size * Type.BYTES_PER_ELEMENT, Type)
+                const aData = prepareData(bvData, byteOffset, count * size * Type.BYTES_PER_ELEMENT, Type);
                 logOnce('accesor', name, aData);
             }
         };
@@ -340,7 +340,7 @@ const create = () => {
             });
 
             if (_.has(primitive, 'indices')) {
-                const accessor = gltf.accessors[primitive.indices]
+                const accessor = gltf.accessors[primitive.indices];
                 uploadBufferView(accessor.bufferView, gl.ELEMENT_ARRAY_BUFFER);
             }
         });
@@ -377,7 +377,7 @@ const create = () => {
                             const byteStride = _.get(bufferView, 'byteStride', 0);
                             const byteOffset = _.get(accessor, 'byteOffset', 0);
 
-                            gl.vertexAttribPointer(location, size, componentType, normalized, byteStride, byteOffset)
+                            gl.vertexAttribPointer(location, size, componentType, normalized, byteStride, byteOffset);
                             gl.enableVertexAttribArray(location);
                         } else {
                             logOnce('WARN skipping', attribute);
@@ -385,7 +385,7 @@ const create = () => {
                     });
 
                     if (_.has(primitive, 'indices')) {
-                        const accessor = gltf.accessors[primitive.indices]
+                        const accessor = gltf.accessors[primitive.indices];
                         bindBufferView(gl, bufferViews, accessor.bufferView);
                     }
 
@@ -415,12 +415,12 @@ const create = () => {
                             gl.disableVertexAttribArray(location);
                         }
                     });
-                })
+                });
             }
-        }
+        };
     }
 
-    function createImageTexture(gl, image) {
+    function createImageTexture (gl, image) {
         console.log('creatingTexture', image, image.width, image.height);
         const texture = gl.createTexture();
 
@@ -439,7 +439,7 @@ const create = () => {
         return texture;
     }
 
-    function renderNode(gl, node, projection, view, model) {
+    function renderNode (gl, node, projection, view, model) {
         if (_.has(node, 'translation')) {
             model = mat4.multiply(mat4.create(), model, mat4.fromTranslation(mat4.create(), node.translation));
         }
@@ -483,7 +483,7 @@ const create = () => {
         }
     ];
 
-    function renderScene(gl, scene) {
+    function renderScene (gl, scene) {
         const projection = mat4.perspective(mat4.create(), radians(45), viewport.width / viewport.height, 0.1, 800);
         const view = mat4.lookAt(mat4.create(), viewPos, [ 0, 0, 0], [ 0, 1, 0 ]);
         //const model = mat4.fromRotation(mat4.create(), radians(20 * getTimeS()), vec3.fromValues(1.0, 0.3, 0.5));
@@ -521,8 +521,8 @@ const create = () => {
                 gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
                 const levels = images.length / 6;
 
-                for (var i = 0; i < 6; i++) {
-                    for (var level = 0; level < levels; level++) {
+                for (let i = 0; i < 6; i++) {
+                    for (let level = 0; level < levels; level++) {
                         const index = level + levels * i;
                         const image = images[index];
 
@@ -558,86 +558,86 @@ const create = () => {
 
     const loadCubemaps = gl => {
         return Promise.all([
-                loadCubemap(gl, 'skybox', [
-                    require('../resources/okretnica/skybox_posx.png'),
-                    require('../resources/okretnica/skybox_negx.png'),
-                    require('../resources/okretnica/skybox_posy.png'),
-                    require('../resources/okretnica/skybox_negy.png'),
-                    require('../resources/okretnica/skybox_posz.png'),
-                    require('../resources/okretnica/skybox_negz.png')
-                ]),
+            loadCubemap(gl, 'skybox', [
+                require('../resources/okretnica/skybox_posx.png'),
+                require('../resources/okretnica/skybox_negx.png'),
+                require('../resources/okretnica/skybox_posy.png'),
+                require('../resources/okretnica/skybox_negy.png'),
+                require('../resources/okretnica/skybox_posz.png'),
+                require('../resources/okretnica/skybox_negz.png')
+            ]),
 
-                loadCubemap(gl, 'irradiance', [
-                    require('../resources/okretnica/irradiance_posx.png'),
-                    require('../resources/okretnica/irradiance_negx.png'),
-                    require('../resources/okretnica/irradiance_posy.png'),
-                    require('../resources/okretnica/irradiance_negy.png'),
-                    require('../resources/okretnica/irradiance_posz.png'),
-                    require('../resources/okretnica/irradiance_negz.png')
-                ]),
+            loadCubemap(gl, 'irradiance', [
+                require('../resources/okretnica/irradiance_posx.png'),
+                require('../resources/okretnica/irradiance_negx.png'),
+                require('../resources/okretnica/irradiance_posy.png'),
+                require('../resources/okretnica/irradiance_negy.png'),
+                require('../resources/okretnica/irradiance_posz.png'),
+                require('../resources/okretnica/irradiance_negz.png')
+            ]),
 
-                loadCubemap(gl, 'radiance', [
-                    require('../resources/okretnica/radiance_posx_0_256x256.png'),
-                    require('../resources/okretnica/radiance_posx_1_128x128.png'),
-                    require('../resources/okretnica/radiance_posx_2_64x64.png'),
-                    require('../resources/okretnica/radiance_posx_3_32x32.png'),
-                    require('../resources/okretnica/radiance_posx_4_16x16.png'),
-                    require('../resources/okretnica/radiance_posx_5_8x8.png'),
-                    require('../resources/okretnica/radiance_posx_6_4x4.png'),
-                    require('../resources/okretnica/radiance_posx_7_2x2.png'),
-                    require('../resources/okretnica/radiance_posx_8_1x1.png'),
+            loadCubemap(gl, 'radiance', [
+                require('../resources/okretnica/radiance_posx_0_256x256.png'),
+                require('../resources/okretnica/radiance_posx_1_128x128.png'),
+                require('../resources/okretnica/radiance_posx_2_64x64.png'),
+                require('../resources/okretnica/radiance_posx_3_32x32.png'),
+                require('../resources/okretnica/radiance_posx_4_16x16.png'),
+                require('../resources/okretnica/radiance_posx_5_8x8.png'),
+                require('../resources/okretnica/radiance_posx_6_4x4.png'),
+                require('../resources/okretnica/radiance_posx_7_2x2.png'),
+                require('../resources/okretnica/radiance_posx_8_1x1.png'),
 
-                    require('../resources/okretnica/radiance_negx_0_256x256.png'),
-                    require('../resources/okretnica/radiance_negx_1_128x128.png'),
-                    require('../resources/okretnica/radiance_negx_2_64x64.png'),
-                    require('../resources/okretnica/radiance_negx_3_32x32.png'),
-                    require('../resources/okretnica/radiance_negx_4_16x16.png'),
-                    require('../resources/okretnica/radiance_negx_5_8x8.png'),
-                    require('../resources/okretnica/radiance_negx_6_4x4.png'),
-                    require('../resources/okretnica/radiance_negx_7_2x2.png'),
-                    require('../resources/okretnica/radiance_negx_8_1x1.png'),
+                require('../resources/okretnica/radiance_negx_0_256x256.png'),
+                require('../resources/okretnica/radiance_negx_1_128x128.png'),
+                require('../resources/okretnica/radiance_negx_2_64x64.png'),
+                require('../resources/okretnica/radiance_negx_3_32x32.png'),
+                require('../resources/okretnica/radiance_negx_4_16x16.png'),
+                require('../resources/okretnica/radiance_negx_5_8x8.png'),
+                require('../resources/okretnica/radiance_negx_6_4x4.png'),
+                require('../resources/okretnica/radiance_negx_7_2x2.png'),
+                require('../resources/okretnica/radiance_negx_8_1x1.png'),
 
-                    require('../resources/okretnica/radiance_posy_0_256x256.png'),
-                    require('../resources/okretnica/radiance_posy_1_128x128.png'),
-                    require('../resources/okretnica/radiance_posy_2_64x64.png'),
-                    require('../resources/okretnica/radiance_posy_3_32x32.png'),
-                    require('../resources/okretnica/radiance_posy_4_16x16.png'),
-                    require('../resources/okretnica/radiance_posy_5_8x8.png'),
-                    require('../resources/okretnica/radiance_posy_6_4x4.png'),
-                    require('../resources/okretnica/radiance_posy_7_2x2.png'),
-                    require('../resources/okretnica/radiance_posy_8_1x1.png'),
+                require('../resources/okretnica/radiance_posy_0_256x256.png'),
+                require('../resources/okretnica/radiance_posy_1_128x128.png'),
+                require('../resources/okretnica/radiance_posy_2_64x64.png'),
+                require('../resources/okretnica/radiance_posy_3_32x32.png'),
+                require('../resources/okretnica/radiance_posy_4_16x16.png'),
+                require('../resources/okretnica/radiance_posy_5_8x8.png'),
+                require('../resources/okretnica/radiance_posy_6_4x4.png'),
+                require('../resources/okretnica/radiance_posy_7_2x2.png'),
+                require('../resources/okretnica/radiance_posy_8_1x1.png'),
 
-                    require('../resources/okretnica/radiance_negy_0_256x256.png'),
-                    require('../resources/okretnica/radiance_negy_1_128x128.png'),
-                    require('../resources/okretnica/radiance_negy_2_64x64.png'),
-                    require('../resources/okretnica/radiance_negy_3_32x32.png'),
-                    require('../resources/okretnica/radiance_negy_4_16x16.png'),
-                    require('../resources/okretnica/radiance_negy_5_8x8.png'),
-                    require('../resources/okretnica/radiance_negy_6_4x4.png'),
-                    require('../resources/okretnica/radiance_negy_7_2x2.png'),
-                    require('../resources/okretnica/radiance_negy_8_1x1.png'),
+                require('../resources/okretnica/radiance_negy_0_256x256.png'),
+                require('../resources/okretnica/radiance_negy_1_128x128.png'),
+                require('../resources/okretnica/radiance_negy_2_64x64.png'),
+                require('../resources/okretnica/radiance_negy_3_32x32.png'),
+                require('../resources/okretnica/radiance_negy_4_16x16.png'),
+                require('../resources/okretnica/radiance_negy_5_8x8.png'),
+                require('../resources/okretnica/radiance_negy_6_4x4.png'),
+                require('../resources/okretnica/radiance_negy_7_2x2.png'),
+                require('../resources/okretnica/radiance_negy_8_1x1.png'),
 
-                    require('../resources/okretnica/radiance_posz_0_256x256.png'),
-                    require('../resources/okretnica/radiance_posz_1_128x128.png'),
-                    require('../resources/okretnica/radiance_posz_2_64x64.png'),
-                    require('../resources/okretnica/radiance_posz_3_32x32.png'),
-                    require('../resources/okretnica/radiance_posz_4_16x16.png'),
-                    require('../resources/okretnica/radiance_posz_5_8x8.png'),
-                    require('../resources/okretnica/radiance_posz_6_4x4.png'),
-                    require('../resources/okretnica/radiance_posz_7_2x2.png'),
-                    require('../resources/okretnica/radiance_posz_8_1x1.png'),
+                require('../resources/okretnica/radiance_posz_0_256x256.png'),
+                require('../resources/okretnica/radiance_posz_1_128x128.png'),
+                require('../resources/okretnica/radiance_posz_2_64x64.png'),
+                require('../resources/okretnica/radiance_posz_3_32x32.png'),
+                require('../resources/okretnica/radiance_posz_4_16x16.png'),
+                require('../resources/okretnica/radiance_posz_5_8x8.png'),
+                require('../resources/okretnica/radiance_posz_6_4x4.png'),
+                require('../resources/okretnica/radiance_posz_7_2x2.png'),
+                require('../resources/okretnica/radiance_posz_8_1x1.png'),
 
-                    require('../resources/okretnica/radiance_negz_0_256x256.png'),
-                    require('../resources/okretnica/radiance_negz_1_128x128.png'),
-                    require('../resources/okretnica/radiance_negz_2_64x64.png'),
-                    require('../resources/okretnica/radiance_negz_3_32x32.png'),
-                    require('../resources/okretnica/radiance_negz_4_16x16.png'),
-                    require('../resources/okretnica/radiance_negz_5_8x8.png'),
-                    require('../resources/okretnica/radiance_negz_6_4x4.png'),
-                    require('../resources/okretnica/radiance_negz_7_2x2.png'),
-                    require('../resources/okretnica/radiance_negz_8_1x1.png')
-                ]),
-            ])
+                require('../resources/okretnica/radiance_negz_0_256x256.png'),
+                require('../resources/okretnica/radiance_negz_1_128x128.png'),
+                require('../resources/okretnica/radiance_negz_2_64x64.png'),
+                require('../resources/okretnica/radiance_negz_3_32x32.png'),
+                require('../resources/okretnica/radiance_negz_4_16x16.png'),
+                require('../resources/okretnica/radiance_negz_5_8x8.png'),
+                require('../resources/okretnica/radiance_negz_6_4x4.png'),
+                require('../resources/okretnica/radiance_negz_7_2x2.png'),
+                require('../resources/okretnica/radiance_negz_8_1x1.png')
+            ]),
+        ])
             .then(res => {
                 skyboxTexture = res[0];
                 irradianceTexture = res[1];
@@ -700,7 +700,7 @@ const create = () => {
             fsQuad.draw();
         } else {
             const sceneN = gltf.scene || 0; // TODO if no default scene, skip render?
-            renderScene(gl, gltf.scenes[sceneN])
+            renderScene(gl, gltf.scenes[sceneN]);
         }
 
         first = false;
