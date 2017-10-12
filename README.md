@@ -1,5 +1,6 @@
-# gltf2-webgl
+# About
 gltf2 loading and rendering experimentation in webgl
+[Live demo](https://topfs2.github.io/gltf2-webgl/)
 
 # Build
 npm install
