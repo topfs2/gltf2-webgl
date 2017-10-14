@@ -15,6 +15,7 @@
   "author": "Tobias Arrskog",
   "license": "MIT",
   "dependencies": {
+    "dat.gui": "^0.6.1",
     "gl-matrix": "^2.4.0",
     "lodash": "^4.17.4"
   },

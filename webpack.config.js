@@ -36,6 +36,11 @@ module.exports = {
             }
         ]
     },
+    resolve: {
+      alias: {
+        'dat.gui': 'dat.gui/build/dat.gui.js'
+      }
+    },
     devServer: {
         historyApiFallback: true,
         contentBase: './',

@@ -2,6 +2,7 @@
 
 const { vec2, vec3, vec4, quat, mat2, mat3, mat4 } = require('gl-matrix');
 const _ = require('lodash');
+const dat = require('dat.gui');
 
 const Shader = require('../Shader');
 const GLTF2Loader = require('../GLTF2Loader');
@@ -14,6 +15,29 @@ const getCurTimeS = () => getTimeMS() / 1000;
 const initialMS = getCurTimeMS();
 const getTimeMS = () => getCurTimeMS() - initialMS;
 const getTimeS = () => getTimeMS() / 1000;
+
+const gui = new dat.GUI();
+const conf = {
+    useIBL: true,
+    lights: 1,
+    color0: [ 255, 255, 255 ],
+    color1: [ 0, 128, 255 ],
+    color2: [ 255, 0, 255 ]
+};
+
+gui.add(conf, 'useIBL');
+gui.add(conf, 'lights', 0, 3).step(1);
+
+gui.addColor(conf, 'color0');
+gui.addColor(conf, 'color1');
+gui.addColor(conf, 'color2');
+
+const lightPositions = [
+    vec3.fromValues(0, 5, 0),
+    vec3.fromValues(-3, 5, 0),
+    vec3.fromValues(3, 5, 0)
+];
+
 
 const radians = degrees => degrees * Math.PI / 180;
 const degrees = radians => radians * 180 / Math.PI;
@@ -223,8 +247,8 @@ const create = () => {
             definesMap.HDR_TONEMAP = 1;
         }
 
-        definesMap.HAVE_LIGHTS = lights.length;
-        definesMap.HAVE_IBL = 1;
+        definesMap.HAVE_LIGHTS = conf.lights;
+        definesMap.HAVE_IBL = conf.useIBL ? 1 : 0;
         definesMap.HAVE_LOD = haveLodSupport ? 1 : 0;
         //definesMap.MAX_REFLECTION_LOD = 4.0;
 
@@ -271,10 +295,13 @@ const create = () => {
             bindTextureAs(gl, shader, 'emissiveTexture', material, 'emissiveSampler', unit++);
         }
 
-        _.forEach(lights, (light, i) => {
-            shader.uniform3fv(`lightPositions[${i}]`, light.position);
-            shader.uniform3fv(`lightColors[${i}]`, light.color);
-        });
+        for (var i = 0; i < conf.lights; i++) {
+            const color = _.get(conf, `color${i}`)
+            const position = lightPositions[i];
+
+            shader.uniform3fv(`lightPositions[${i}]`, position);
+            shader.uniform3fv(`lightColors[${i}]`, vec3.fromValues(color[0], color[1], color[2]));
+        }
 
         return shader;
     }
@@ -475,13 +502,6 @@ const create = () => {
 
     //const viewPos = vec3.fromValues(0, 0.05, -0.15);
     const viewPos = vec3.fromValues(0.0, 0.0, -5.0);
-
-    const lights = [
-        {
-            position: vec3.fromValues(0, 5, 0),
-            color: vec3.fromValues(300, 300, 300)
-        }
-    ];
 
     function renderScene (gl, scene) {
         const projection = mat4.perspective(mat4.create(), radians(45), viewport.width / viewport.height, 0.1, 800);
