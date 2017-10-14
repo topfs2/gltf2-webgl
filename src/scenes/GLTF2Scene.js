@@ -1,6 +1,6 @@
 'use strict';
 
-const { vec2, vec3, vec4, quat, mat2, mat3, mat4 } = require('gl-matrix');
+const { vec3, mat4 } = require('gl-matrix');
 const _ = require('lodash');
 const dat = require('dat.gui');
 
@@ -10,7 +10,6 @@ const ShaderLoader = require('../ShaderLoader');
 const ImageLoader = require('../ImageLoader');
 
 const getCurTimeMS = () => (new Date()).getTime();
-const getCurTimeS = () => getTimeMS() / 1000;
 
 const initialMS = getCurTimeMS();
 const getTimeMS = () => getCurTimeMS() - initialMS;
@@ -40,11 +39,6 @@ const lightPositions = [
 
 
 const radians = degrees => degrees * Math.PI / 180;
-const degrees = radians => radians * 180 / Math.PI;
-
-const DEBUG_ACCESSOR = false;
-const DEBUG_SHADERS = true;
-const DEBUG_MATERIAL = false;
 
 const accessorTypeSizes = {
     SCALAR: 1,
@@ -66,18 +60,6 @@ const logOnce = (...args) => {
     }
 };
 
-const typeArray = (componentType) => {
-    if (componentType == gl.FLOAT) {
-        return Float32Array;
-    } else if (componentType == gl.UNSIGNED_INT) {
-        return Uint32Array;
-    } else if (componentType == gl.UNSIGNED_SHORT) {
-        return Uint16Array;
-    } else if (componentType == gl.UNSIGNED_BYTE) {
-        return Uint8Array;
-    }
-};
-
 const accessorType2size = type => accessorTypeSizes[type];
 
 const create = () => {
@@ -87,68 +69,17 @@ const create = () => {
     let buffers;
     let images;
 
-    let texture;
-
     let meshes = [];
     let cameras = [];
     let textures = [];
 
     /*  Pipeline stuff */
-    let fsQuad;
-    let skyboxTexture;
     let irradianceTexture;
     let radianceTexture;
     let brdfTexture;
 
     let haveLodSupport = false;
     let haveFloatSupport = false;
-
-    function loadQuad (gl) {
-        const vertices = new Float32Array([
-        //   x   y  z  u  v
-            -1, -1, 0, 0, 0,
-            1, -1, 0, 1, 0,
-            1,  1, 0, 1, 1,
-            -1,  1, 0, 0, 1
-        ]);
-
-        const indices = new Uint8Array([
-            0, 1, 2,
-            0, 2, 3
-        ]);
-
-        const arrayBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, arrayBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-
-        const elementArrayBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, elementArrayBuffer);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
-
-        return {
-            draw: () => {
-                gl.bindBuffer(gl.ARRAY_BUFFER, arrayBuffer);
-                gl.vertexAttribPointer(attributeLocations.POSITION, 3, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 0);
-                gl.enableVertexAttribArray(attributeLocations.POSITION);
-
-                gl.vertexAttribPointer(attributeLocations.TEXCOORD_0, 2, gl.FLOAT, false, 5 * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT);
-                gl.enableVertexAttribArray(attributeLocations.TEXCOORD_0);
-
-                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, elementArrayBuffer);
-                gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, null);
-            }
-        };
-    };
-
-    function prepareData (data, offset, length, Type) {
-        data = data.slice(offset, offset + length);
-
-        if (Type) {
-            data = new Type(data.buffer);
-        }
-
-        return data;
-    }
 
     function getBufferData (bufferN) {
         return buffers[bufferN];
@@ -178,39 +109,6 @@ const create = () => {
     function bindBufferView (gl, bufferViews, bufferViewN) {
         const { target, buffer } = bufferViews[bufferViewN];
         gl.bindBuffer(target, buffer);
-    }
-
-    function loadCamera (camera) {
-        if (camera.type == 'perspective') {
-            const perspective = camera.perspective;
-
-            if (!_.has(perspective, 'zfar')) {
-                throw 'TODO X camera support infinite zfar';
-            }
-
-            const yfov = _.get(perspective, 'yfov');
-            const aspectRatio = _.get(perspective, 'aspectRatio');
-            const znear = _.get(perspective, 'znear');
-            const zfar = _.get(perspective, 'zfar');
-
-            return mat4.perspective(mat4.create(), yfov, aspectRatio, znear, zfar);
-        } else if (camera.type == 'orthographic') {
-            throw 'TODO X camera support orthographic';
-
-            const orthographic = camera.orthographic;
-
-            const xmag = _.get(orthographic, 'xmag');
-            const ymag = _.get(orthographic, 'ymag');
-            const znear = _.get(orthographic, 'znear');
-            const zfar = _.get(orthographic, 'zfar');
-
-            // Is this correct?
-            return mat4.ortho(mat4.create(), -xmag / 2, xmag / 2, -ymag / 2, ymag / 2);
-        }
-    }
-
-    function bindTexture (gl, shader, name, materialRef, unit) {
-        bindTextureAs(gl, shader, name + 'Texture', materialRef, name + 'Sampler', unit);
     }
 
     function bindTextureAs (gl, shader, name, materialRef, uniform, unit) {
@@ -250,8 +148,6 @@ const create = () => {
         definesMap.HAVE_LIGHTS = conf.lights;
         definesMap.HAVE_IBL = conf.useIBL ? 1 : 0;
         definesMap.HAVE_LOD = haveLodSupport ? 1 : 0;
-        //definesMap.MAX_REFLECTION_LOD = 4.0;
-
 
         if (_.has(material, 'occlusionTexture')) {
             definesMap.HAVE_OCCLUSION_TEXTURE = 1;
@@ -266,7 +162,6 @@ const create = () => {
         // Setup shader
         shader.use();
 
-        // Remove later
         shader.uniform3fv('camPos', viewPos);
 
         gl.activeTexture(gl.TEXTURE0);
@@ -295,8 +190,8 @@ const create = () => {
             bindTextureAs(gl, shader, 'emissiveTexture', material, 'emissiveSampler', unit++);
         }
 
-        for (var i = 0; i < conf.lights; i++) {
-            const color = _.get(conf, `color${i}`)
+        for (let i = 0; i < conf.lights; i++) {
+            const color = _.get(conf, `color${i}`);
             const position = lightPositions[i];
 
             shader.uniform3fv(`lightPositions[${i}]`, position);
@@ -310,26 +205,6 @@ const create = () => {
 
     // TODO With webgl2 we can use VertexArrayObject and move load part from draw to load
     function createMesh (gl, mesh) {
-        const debugAccessor = (name, accessor) => {
-            //console.log('asked', name);
-
-            if (DEBUG_ACCESSOR && first) {
-                const bufferView = gltf.bufferViews[accessor.bufferView];
-
-                const size = accessorType2size(accessor.type);
-                const componentType = _.get(accessor, 'componentType');
-                const normalized = _.get(accessor, 'normalized', false);
-                const byteStride = _.get(bufferView, 'byteStride', 0);
-                const byteOffset = _.get(accessor, 'byteOffset', 0);
-                const count = _.get(accessor, 'count');
-
-                const bvData = getBufferViewData(bufferView);
-                const Type = typeArray(componentType);
-                const aData = prepareData(bvData, byteOffset, count * size * Type.BYTES_PER_ELEMENT, Type);
-                logOnce('accesor', name, aData);
-            }
-        };
-
         const bufferViews = { };
         const uploadBufferView = (bufferViewN, target) => {
             console.log('loading', bufferViewN);
@@ -435,8 +310,6 @@ const create = () => {
                     // UNLOAD/UNBIND
                     // TODO Unnecessary if we had Vertex Array Objects?
                     _.forEach(primitive.attributes, (accessorN, attribute) => {
-                        const accessor = gltf.accessors[accessorN]; // TODO prepare and link properly in gltf instead?
-
                         if (_.has(attributeLocations, attribute)) {
                             const location = attributeLocations[attribute];
                             gl.disableVertexAttribArray(location);
@@ -500,13 +373,11 @@ const create = () => {
         }
     }
 
-    //const viewPos = vec3.fromValues(0, 0.05, -0.15);
     const viewPos = vec3.fromValues(0.0, 0.0, -5.0);
 
     function renderScene (gl, scene) {
         const projection = mat4.perspective(mat4.create(), radians(45), viewport.width / viewport.height, 0.1, 800);
         const view = mat4.lookAt(mat4.create(), viewPos, [ 0, 0, 0], [ 0, 1, 0 ]);
-        //const model = mat4.fromRotation(mat4.create(), radians(20 * getTimeS()), vec3.fromValues(1.0, 0.3, 0.5));
         const model = mat4.fromRotation(mat4.create(), radians(20 * getTimeS()), vec3.fromValues(0.0, 1.0, 0.0));
 
         _.forEach(scene.nodes, nodeN => renderNode(gl, gltf.nodes[nodeN], projection, view, model));
@@ -578,15 +449,6 @@ const create = () => {
 
     const loadCubemaps = gl => {
         return Promise.all([
-            loadCubemap(gl, 'skybox', [
-                require('../resources/okretnica/skybox_posx.png'),
-                require('../resources/okretnica/skybox_negx.png'),
-                require('../resources/okretnica/skybox_posy.png'),
-                require('../resources/okretnica/skybox_negy.png'),
-                require('../resources/okretnica/skybox_posz.png'),
-                require('../resources/okretnica/skybox_negz.png')
-            ]),
-
             loadCubemap(gl, 'irradiance', [
                 require('../resources/okretnica/irradiance_posx.png'),
                 require('../resources/okretnica/irradiance_negx.png'),
@@ -659,13 +521,12 @@ const create = () => {
             ]),
         ])
             .then(res => {
-                skyboxTexture = res[0];
-                irradianceTexture = res[1];
-                radianceTexture = res[2];
+                irradianceTexture = res[0];
+                radianceTexture = res[1];
             });
     };
 
-    const load = (gl, width, height) => {
+    const load = gl => {
         haveLodSupport = !!gl.getExtension('EXT_shader_texture_lod');
         haveFloatSupport = !!gl.getExtension('OES_texture_float') && !!gl.getExtension('OES_texture_float_linear');
 
@@ -679,11 +540,8 @@ const create = () => {
                 images = res.images;
 
                 meshes = _.map(gltf.meshes, mesh => createMesh(gl, mesh));
-                cameras = _.map(gltf.cameras, loadCamera);
 
                 textures = _.map(images, image => createImageTexture(gl, image));
-
-                fsQuad = loadQuad(gl);
             }),
             loadCubemaps(gl),
             loadBRDF(gl)
@@ -706,22 +564,8 @@ const create = () => {
     const render = (gl) => {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-        if (DEBUG_MATERIAL) {
-            const projection = mat4.ortho(mat4.create(), -1, 1, -1, 1, -1, 1);
-            const view = mat4.create();
-            const model = mat4.create();
-
-            const shader = setupShaderForMaterial(gl, gltf.materials[0], { HAVE_POSITION: 1, HAVE_TEXCOORD_0: 1 });
-
-            shader.uniformMatrix4fv('projection', projection);
-            shader.uniformMatrix4fv('view', view);
-            shader.uniformMatrix4fv('model', model);
-
-            fsQuad.draw();
-        } else {
-            const sceneN = gltf.scene || 0; // TODO if no default scene, skip render?
-            renderScene(gl, gltf.scenes[sceneN]);
-        }
+        const sceneN = gltf.scene || 0; // TODO if no default scene, skip render?
+        renderScene(gl, gltf.scenes[sceneN]);
 
         first = false;
     };
